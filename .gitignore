@@ -32,6 +32,6 @@
 *.app
 
 .cache
-or-tools
+deps
 tags
 build
