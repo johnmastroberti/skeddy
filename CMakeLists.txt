@@ -19,7 +19,8 @@ find_package(ortools REQUIRED CONFIG)
 
 # Source files
 include_directories(${PROJECT_SOURCE_DIR}/include)
-include_directories(${PROJECT_SOURCE_DIR}/or-tools/include)
+include_directories(${PROJECT_SOURCE_DIR}/deps/or-tools/include)
+include_directories(${PROJECT_SOURCE_DIR}/deps/doctest)
 file(GLOB sources ${PROJECT_SOURCE_DIR}/src/*.cpp)
 file(GLOB headers ${PROJECT_SOURCE_DIR}/include/*.hpp)
 
@@ -55,5 +56,9 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 SET(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # Define the executable and libraries to be linked
-add_executable(skeddy ${sources} ${headers})
+add_executable(skeddy ${sources} ${headers} ${PROJECT_SOURCE_DIR}/exes/main.cpp)
 target_link_libraries(skeddy fmt::fmt spdlog::spdlog ortools::ortools)
+
+# Tests
+add_executable(tests ${sources} ${headers} ${PROJECT_SOURCE_DIR}/exes/tests.cpp)
+target_link_libraries(tests fmt::fmt spdlog::spdlog ortools::ortools)
