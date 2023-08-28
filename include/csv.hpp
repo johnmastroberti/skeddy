@@ -1,4 +1,5 @@
 #pragma once
+#include <istream>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -8,6 +9,7 @@ struct Table {
   std::vector<std::vector<std::string>> data;
 
   Table() = default;
+  bool operator==(Table const&) const = default;
 };
 
-Table read_csv(std::string_view filename);
+Table read_csv(std::istream& file);
