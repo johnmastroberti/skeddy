@@ -49,6 +49,20 @@ std::optional<std::vector<Employee>> parse_employees(Table const& table) {
   return v;
 }
 
+bool check_employee_table_preconditions(Table const& table) {
+  if (table.headers.empty()) return false;
+  if (table.data.empty()) return false;
+  if (table.headers.size() < 3) return false;
+  if (table.headers[0] != "Employee") return false;
+  if (table.headers[1] != "Target Hours") return false;
+  const auto N = table.headers.size();
+  if (stdr::any_of(table.data,
+                   [N](auto const& row) { return row.size() != N; }))
+    return false;
+  return true;
+}
+
+/* parse_employees tests {{{*/
 DOCTEST_TEST_CASE("Employee parsing tests") {
   using namespace std::literals;
   using std::nullopt;
@@ -86,17 +100,4 @@ DOCTEST_TEST_CASE("Employee parsing tests") {
     skills[0] = SkillLevel{2};
     DOCTEST_CHECK(v[1] == Employee("Mary"s, 40, skills, shifts));
   }
-}
-
-bool check_employee_table_preconditions(Table const& table) {
-  if (table.headers.empty()) return false;
-  if (table.data.empty()) return false;
-  if (table.headers.size() < 3) return false;
-  if (table.headers[0] != "Employee") return false;
-  if (table.headers[1] != "Target Hours") return false;
-  const auto N = table.headers.size();
-  if (stdr::any_of(table.data,
-                   [N](auto const& row) { return row.size() != N; }))
-    return false;
-  return true;
-}
+} /*}}}*/
