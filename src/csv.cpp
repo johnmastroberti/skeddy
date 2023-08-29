@@ -4,7 +4,6 @@
 #include <fstream>
 #include <sstream>
 
-#define DOCTEST_CONFIG_NO_SHORT_MACRO_NAMES
 #include "doctest.hpp"
 #include "ranges.hpp"
 

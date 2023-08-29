@@ -17,9 +17,6 @@ namespace ors = operations_research::sat;
 #include <map>
 #include <ranges>
 
-#define DOCTEST_CONFIG_IMPLEMENT
-#define DOCTEST_CONFIG_NO_SHORT_MACRO_NAMES
-#include "doctest.hpp"
 namespace stdr = std::ranges;
 namespace stdv = std::ranges::views;
 

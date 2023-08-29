@@ -58,7 +58,9 @@ SET(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 # Define the executable and libraries to be linked
 add_executable(skeddy ${sources} ${headers} ${PROJECT_SOURCE_DIR}/exes/main.cpp)
 target_link_libraries(skeddy fmt::fmt spdlog::spdlog ortools::ortools)
+target_compile_definitions(skeddy PUBLIC DOCTEST_CONFIG_NO_SHORT_MACRO_NAMES DOCTEST_CONFIG_DISABLE)
 
 # Tests
 add_executable(tests ${sources} ${headers} ${PROJECT_SOURCE_DIR}/exes/tests.cpp)
 target_link_libraries(tests fmt::fmt spdlog::spdlog ortools::ortools)
+target_compile_definitions(tests PUBLIC DOCTEST_CONFIG_NO_SHORT_MACRO_NAMES)
