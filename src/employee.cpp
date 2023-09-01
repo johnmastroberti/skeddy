@@ -26,6 +26,8 @@ std::optional<std::vector<Employee>> get_employees() {
   return parse_employees(table);
 }
 
+std::string const& Employee::name() const { return m_name; }
+
 std::optional<std::vector<Employee>> parse_employees(Table const& table) {
   if (!check_employee_table_preconditions(table)) return std::nullopt;
 

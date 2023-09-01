@@ -17,7 +17,9 @@ class Employee {
   Employee() = default;
   Employee(std::string name, std::uint8_t hrs, std::span<SkillLevel> skills,
            std::span<Shift> reqs);
-  bool operator==(const Employee &) const = default;
+  bool operator==(const Employee&) const = default;
+  std::string const& name() const;
+  inline int hours() const { return m_hours; }
 };
 
 std::optional<std::vector<Employee>> get_employees();
