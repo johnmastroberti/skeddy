@@ -1,11 +1,57 @@
 #include "shifts.hpp"
 
+#include <fstream>
+
 #include "csv.hpp"
 #include "ranges.hpp"
+#include "util.hpp"
 
 size_t shift_to_index(Shift shift);
+bool check_shift_table_preconditions(Table const&);
 
-std::optional<ShiftSet> ShiftSet::get_shifts() { return std::nullopt; }
+std::optional<ShiftSet> ShiftSet::get_shifts() {
+  std::ifstream shift_csv("shifts.csv");
+  if (!shift_csv.good()) return std::nullopt;
+  const auto table = read_csv(shift_csv);
+  if (!check_shift_table_preconditions(table)) return std::nullopt;
+
+  ShiftSet shifts;
+  shifts.m_roles =
+      std::vector<std::string>(table.headers.begin() + 1, table.headers.end());
+
+  // Assume rows are ordered Monday-Friday
+  std::vector<std::optional<int>> personnel;
+  std::vector<int> personnel_ints;
+  auto unwrap = [](auto const& opt) { return *opt; };
+  for (auto const& row : table.data) {
+    personnel.clear();
+    personnel_ints.clear();
+    personnel.reserve(row.size());
+    personnel_ints.reserve(row.size());
+    std::transform(row.begin() + 1, row.end(), std::back_inserter(personnel),
+                   to_int);
+
+    if (stdr::any_of(personnel, [](auto o) { return o == std::nullopt; }))
+      return std::nullopt;
+    std::transform(personnel.begin(), personnel.end(),
+                   std::back_inserter(personnel_ints), unwrap);
+    shifts.m_personnel_per_role.emplace_back(personnel_ints);
+    shifts.m_personnel_per_role.emplace_back(std::move(personnel_ints));
+  }
+
+  shifts.set_skill_map();
+  return shifts;
+}
+
+bool check_shift_table_preconditions(Table const& t) {
+  if (t.headers.empty()) return false;
+  if (t.data.size() != 5) return false;
+  const auto N = t.headers.size();
+  if (N < 2ul) return false;
+  auto same_size = [N](auto const& row) { return row.size() == N; };
+  if (!stdr::all_of(t.data, same_size)) return false;
+  return true;
+}
 
 int ShiftSet::personnel_count(Shift shift, std::string_view role) const {
   size_t shift_ix = shift_to_index(shift);
@@ -57,3 +103,5 @@ void ShiftSet::set_skill_map() {
   m_skill_map["Shift Manager"] = "Shift Manager";
   m_skill_map["Office"] = "Shift Manager";
 }
+
+std::vector<std::string> const& ShiftSet::roles() const { return m_roles; }
