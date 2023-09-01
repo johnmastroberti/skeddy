@@ -11,6 +11,9 @@ clean:
 run: build
 	./build/skeddy
 
+debug: build
+	gdb ./build/skeddy
+
 test: build
 	./build/tests
 
