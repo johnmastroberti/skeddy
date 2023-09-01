@@ -35,3 +35,5 @@
 deps
 tags
 build
+result.csv
+.~*
