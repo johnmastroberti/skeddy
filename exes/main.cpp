@@ -40,10 +40,18 @@ int main() {
   auto const& employees = *emp;
   auto const& shifts = *shf;
   using enum Shift;
-  const std::vector<Shift> all_shifts = {
+  const std::vector all_shifts = {
       MondayMorning,    MondayAfternoon,    TuesdayMorning,  TuesdayAfternoon,
       WednesdayMorning, WednesdayAfternoon, ThursdayMorning, ThursdayAfternoon,
       FridayMorning,    FridayAfternoon,
+  };
+
+  const std::vector shift_pairs = {
+      std::pair{MondayMorning, MondayAfternoon},
+      std::pair{TuesdayMorning, TuesdayAfternoon},
+      std::pair{WednesdayMorning, WednesdayAfternoon},
+      std::pair{ThursdayMorning, ThursdayAfternoon},
+      std::pair{FridayMorning, FridayAfternoon},
   };
 
   ors::CpModelBuilder cp_model;
@@ -67,10 +75,14 @@ int main() {
   for (auto s : all_shifts) {
     for (auto const& r : shifts.roles()) {
       const auto N_required = shifts.personnel_count(s, r);
-      fmt::print("{}, {} = {}\n", to_string(s), r, N_required);
       ors::LinearExpr sum;
       for (auto const& e : employees) sum += schedule[std::tie(s, e.name(), r)];
-      cp_model.AddGreaterOrEqual(sum, N_required);
+      // For shifts other than Float and Appointments, assign the exact number
+      // requested
+      if (r == "Appointments" || r == "Float")
+        cp_model.AddGreaterOrEqual(sum, N_required);
+      else
+        cp_model.AddEquality(sum, N_required);
     }
   }
 
@@ -93,27 +105,48 @@ int main() {
     }
   }
 
-  // // At least one employee per role per shift
-  // for (auto s : shifts) {
-  //   for (auto r : roles) {
-  //     bools.clear();
-  //     for (auto e : employees) {
-  //       bools.push_back(schedule[std::tie(s, e, r)]);
-  //     }
-  //     cp_model.AddAtLeastOne(bools);
-  //   }
-  // }
-  //
-  // // Each employee only works one role at a time
-  // for (auto e : employees) {
-  //   for (auto s : shifts) {
-  //     bools.clear();
-  //     for (auto r : roles) {
-  //       bools.push_back(schedule[std::tie(s, e, r)]);
-  //     }
-  //     cp_model.AddAtMostOne(bools);
-  //   }
-  // }
+  // Don't assign personnel with zero skill level to that role
+  for (auto const& e : employees) {
+    for (auto r : shifts.roles()) {
+      // Special handling for Float, no skill required
+      // TODO: handle Float better
+      if (r == "Float") continue;
+      auto sk = e.skill_level(std::string(shifts.skill_for_role(r)));
+      if (sk) continue;
+      ors::LinearExpr sum;
+      for (auto s : all_shifts) sum += schedule[std::tie(s, e.name(), r)];
+      cp_model.AddEquality(sum, 0);
+      // Could use FixVariable(schedule[...], false) instead
+    }
+  }
+
+  // Require an average skill level of at least 2 in each role
+  // (if a 1 is scheduled on a role, there must be at least one 3)
+  for (auto r : shifts.roles()) {
+    if (r == "Float") continue;
+    for (auto s : all_shifts) {
+      ors::LinearExpr skill_sum;
+      ors::LinearExpr double_count;
+      for (auto const& e : employees) {
+        auto const& v = schedule[std::tie(s, e.name(), r)];
+        auto sk = e.skill_level(std::string(shifts.skill_for_role(r)));
+        skill_sum += v * sk;
+        double_count += v * 2;
+      }
+      cp_model.AddGreaterOrEqual(skill_sum, double_count);
+    }
+  }
+
+  // Disallow split shifts for full timers
+  for (auto const& e : employees) {
+    if (e.hours() != 40) continue;
+    for (auto [s1, s2] : shift_pairs) {
+      for (auto r : shifts.roles()) {
+        cp_model.AddEquality(schedule[std::tie(s1, e.name(), r)],
+                             schedule[std::tie(s2, e.name(), r)]);
+      }
+    }
+  }
 
   // Set up solver
   ors::Model model;
