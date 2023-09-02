@@ -2,12 +2,12 @@
 #include <cstdint>
 #include <string>
 
-enum class SkillLevel : std::uint8_t {
-  None,
-  Beginner,
-  Proficient,
-  Expert,
-};
+// enum class SkillLevel : std::uint8_t {
+//   None,
+//   Beginner,
+//   Proficient,
+//   Expert,
+// };
 
 enum class Shift : std::uint8_t {
   MondayMorning,

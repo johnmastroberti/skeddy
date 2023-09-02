@@ -12,12 +12,18 @@
 std::optional<std::vector<Employee>> parse_employees(Table const& table);
 bool check_employee_table_preconditions(Table const& table);
 
-Employee::Employee(std::string name, std::uint8_t hrs,
-                   std::span<SkillLevel> skills, std::span<Shift> reqs)
+Employee::Employee(std::string name, int hrs,
+                   std::span<std::string const> skill_names,
+                   std::span<int const> skills, std::span<Shift> reqs)
     : m_name(name),
       m_hours(hrs),
-      m_skills(skills.begin(), skills.end()),
-      m_requests_off(reqs.begin(), reqs.end()) {}
+      m_skills(),
+      m_requests_off(reqs.begin(), reqs.end()) {
+  if (skill_names.size() != skills.size())
+    throw std::runtime_error("Invalid skills");
+  for (auto const& [sname, sk] : stdv::zip(skill_names, skills))
+    m_skills[sname] = sk;
+}
 
 std::optional<std::vector<Employee>> get_employees() {
   std::ifstream file("personnel.csv");
@@ -26,14 +32,15 @@ std::optional<std::vector<Employee>> get_employees() {
   return parse_employees(table);
 }
 
-std::string const& Employee::name() const { return m_name; }
-
 std::optional<std::vector<Employee>> parse_employees(Table const& table) {
   if (!check_employee_table_preconditions(table)) return std::nullopt;
 
+  std::span<std::string const> skill_names(table.headers.begin() + 2,
+                                           table.headers.end());
+
   std::vector<Employee> v;
   std::vector<std::optional<int>> skill_ints;
-  std::vector<SkillLevel> skills;
+  std::vector<int> skills;
   std::vector<Shift> empty_shifts;
   auto is_null = [](auto o) { return o == std::nullopt; };
   for (auto const& row : table.data) {
@@ -45,8 +52,8 @@ std::optional<std::vector<Employee>> parse_employees(Table const& table) {
     std::transform(row.begin() + 2, row.end(), skill_ints.begin(), to_int);
     if (stdr::any_of(skill_ints, is_null)) return std::nullopt;
     std::transform(skill_ints.begin(), skill_ints.end(), skills.begin(),
-                   [](auto const& o) { return static_cast<SkillLevel>(*o); });
-    v.emplace_back(name, *hrs, skills, empty_shifts);
+                   [](auto const& o) { return static_cast<int>(*o); });
+    v.emplace_back(name, *hrs, skill_names, skills, empty_shifts);
   }
   return v;
 }
@@ -96,10 +103,11 @@ DOCTEST_TEST_CASE("Employee parsing tests") {
     DOCTEST_CHECK(ret != nullopt);
     auto v = *ret;
     DOCTEST_CHECK(v.size() == 2);
-    auto skills = std::vector{SkillLevel{1}};
+    auto skills = std::vector{int{1}};
     auto shifts = std::vector<Shift>{};
-    DOCTEST_CHECK(v[0] == Employee("Joe"s, 30, skills, shifts));
-    skills[0] = SkillLevel{2};
-    DOCTEST_CHECK(v[1] == Employee("Mary"s, 40, skills, shifts));
+    auto skill_names = std::vector{"Skill"s};
+    DOCTEST_CHECK(v[0] == Employee("Joe"s, 30, skill_names, skills, shifts));
+    skills[0] = int{2};
+    DOCTEST_CHECK(v[1] == Employee("Mary"s, 40, skill_names, skills, shifts));
   }
 } /*}}}*/
