@@ -35,7 +35,6 @@ std::optional<ShiftSet> ShiftSet::get_shifts() {
       return std::nullopt;
     std::transform(personnel.begin(), personnel.end(),
                    std::back_inserter(personnel_ints), unwrap);
-    shifts.m_personnel_per_role.emplace_back(personnel_ints);
     shifts.m_personnel_per_role.emplace_back(std::move(personnel_ints));
   }
 
@@ -55,6 +54,7 @@ bool check_shift_table_preconditions(Table const& t) {
 
 int ShiftSet::personnel_count(Shift shift, std::string_view role) const {
   size_t shift_ix = shift_to_index(shift);
+  if (shift_ix == size_t(-1)) return 0;
   auto role_it = stdr::find(m_roles, role);
   if (role_it == m_roles.end()) return 0;
   size_t role_ix = role_it - m_roles.begin();
@@ -80,8 +80,8 @@ size_t shift_to_index(Shift shift) {
     case FridayMorning:
     case FridayAfternoon:
       return 4;
-    default:  // TODO: better error handling?
-      return 0;
+    default:
+      return size_t(-1);
   }
 }
 
