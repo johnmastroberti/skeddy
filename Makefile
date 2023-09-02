@@ -1,20 +1,24 @@
-build: builddir
+release: CMakeLists.txt Makefile
+	mkdir -p build-release
+	cmake -S . -B build -G "Ninja" -D CMAKE_BUILD_TYPE=Release -D CMAKE_CXX_COMPILER=g++-13 -D CMAKE_PREFIX_PATH=./deps/or-tools
 	cmake --build build
 
-builddir: CMakeLists.txt Makefile
-	mkdir -p build
-	cmake -S . -B build -G "Ninja" -D CMAKE_CXX_COMPILER=g++-13 -D CMAKE_PREFIX_PATH=./deps/or-tools
+debug: CMakeLists.txt Makefile
+	mkdir -p build-debug
+	cmake -S . -B build -G "Ninja" -D CMAKE_BUILD_TYPE=Debug -D CMAKE_CXX_COMPILER=g++-13 -D CMAKE_PREFIX_PATH=./deps/or-tools
+	cmake --build build
 
 clean:
-	rm -rf build
+	rm -rf build-release
+	rm -rf build-debug
 
 run: build
 	./build/skeddy
 
-debug: build
+drun: build
 	gdb ./build/skeddy
 
 test: build
 	./build/tests
 
-.PHONY: build builddir clean run test
+.PHONY: release debug clean run drun test

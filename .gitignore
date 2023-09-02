@@ -35,5 +35,7 @@
 deps
 tags
 build
+build-release
+build-debug
 result.csv
 .~*
